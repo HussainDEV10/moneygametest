@@ -1,0 +1,33 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  padding: 20px;
+  direction: rtl;
+}
+
+.container {
+  max-width: 300px;
+  margin: auto;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #ccc;
+  text-align: center;
+}
+
+input {
+  width: 90%;
+  padding: 8px;
+  margin-top: 5px;
+}
+
+button {
+  margin: 5px;
+  padding: 8px 15px;
+  cursor: pointer;
+}
+
+#status {
+  margin-top: 10px;
+  color: green;
+}
