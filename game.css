@@ -1,0 +1,37 @@
+body {
+  margin: 0;
+  font-family: 'Rubik', sans-serif;
+  background: #f1f1f1;
+}
+
+header {
+  background: #ffa500;
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.edit-icon {
+  cursor: pointer;
+  background: white;
+  color: #ffa500;
+  border-radius: 50%;
+  padding: 4px;
+}
+
+#usernameDisplay {
+  font-weight: bold;
+}
+
+main {
+  padding: 20px;
+  text-align: center;
+}
