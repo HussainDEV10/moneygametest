@@ -2,6 +2,7 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>لعبة الاستثمار</title>
   <link rel="stylesheet" href="game.css">
   <script type="module" src="game.js" defer></script>
@@ -13,12 +14,18 @@
       <span id="userEmail">...جاري التحميل</span>
       <span class="material-icons edit-icon" id="editUsername">edit</span>
     </div>
-    <div id="usernameDisplay">@username</div>
+    <div class="right-info">
+      <span id="usernameDisplay">@username</span>
+      <div class="coins">
+        <span class="material-icons">monetization_on</span>
+        <span id="coinAmount">100</span>
+      </div>
+    </div>
   </header>
 
   <main>
-    <h1>مرحبًا بك في لعبة الفلوس!</h1>
-    <!-- محتوى اللعبة هنا -->
+    <h1>أهلاً بك في عالم الاستثمار!</h1>
+    <p>ابدأ بجمع الأموال واستثمر بذكاء!</p>
   </main>
 </body>
 </html>
