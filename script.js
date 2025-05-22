@@ -1,43 +1,32 @@
+// firebase إعداد
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyAuQJpBMSijYcYZQ8rAsdnKX-75s5x7qts",
   authDomain: "moneygame-2025.firebaseapp.com",
   projectId: "moneygame-2025",
-  storageBucket: "moneygame-2025.firebasestorage.app",
+  storageBucket: "moneygame-2025.appspot.com",
   messagingSenderId: "427481930723",
   appId: "1:427481930723:web:20ebe3ecfdd76cb5f0ded6"
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-function register() {
+// وظيفة التسجيل
+window.register = function () {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-  auth.createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      db.collection("users").doc(user.uid).set({
-        email: email,
-        balance: 1000
-      });
-      document.getElementById("status").innerText = "تم إنشاء الحساب!";
-    })
-    .catch((error) => {
-      document.getElementById("status").innerText = "خطأ: " + error.message;
-    });
-}
+  const msg = document.getElementById("msg");
 
-function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  auth.signInWithEmailAndPassword(email, password)
+  createUserWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
-      const user = userCredential.user;
-      document.getElementById("status").innerText = "تم تسجيل الدخول!";
-      // redirect to game.html later
+      msg.style.color = "green";
+      msg.textContent = "تم إنشاء الحساب بنجاح";
     })
     .catch((error) => {
-      document.getElementById("status").innerText = "خطأ: " + error.message;
+      msg.style.color = "red";
+      msg.textContent = "خطأ: " + error.message;
     });
-    }
+};
