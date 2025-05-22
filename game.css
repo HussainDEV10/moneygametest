@@ -62,3 +62,40 @@ main {
     margin-top: 10px;
   }
     }
+
+
+.donate-section {
+  margin-top: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 400px;
+  margin-inline: auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+#donateForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#donateForm input, #donateForm button {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+#donateForm button {
+  background: linear-gradient(90deg, #ff9800, #ff5722);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+#donateMessage {
+  margin-top: 10px;
+  font-weight: bold;
+}
