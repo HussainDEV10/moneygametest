@@ -5,7 +5,6 @@ import {
   updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAuQJpBMSijYcYZQ8rAsdnKX-75s5x7qts",
   authDomain: "moneygame-2025.firebaseapp.com",
@@ -14,6 +13,7 @@ const firebaseConfig = {
   messagingSenderId: "427481930723",
   appId: "1:427481930723:web:20ebe3ecfdd76cb5f0ded6"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
@@ -21,18 +21,18 @@ const auth = getAuth(app);
 const userEmailSpan = document.getElementById("userEmail");
 const usernameDisplay = document.getElementById("usernameDisplay");
 const editBtn = document.getElementById("editUsername");
+const coinAmount = document.getElementById("coinAmount");
 
-// التحقق من حالة المستخدم
 onAuthStateChanged(auth, (user) => {
   if (user) {
     userEmailSpan.textContent = user.email;
     usernameDisplay.textContent = user.displayName || "@username";
+    coinAmount.textContent = 100; // كل مستخدم يبدأ بـ 100
   } else {
-    window.location.href = "index.html"; // الرجوع إذا ما في دخول
+    window.location.href = "index.html";
   }
 });
 
-// تعديل الاسم
 editBtn.addEventListener("click", () => {
   const newName = prompt("أدخل اسم جديد (بدون @):");
   if (newName && newName.trim().length >= 3) {
