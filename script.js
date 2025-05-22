@@ -3,7 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getAuth,
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 // إعدادات Firebase
@@ -16,36 +17,64 @@ const firebaseConfig = {
   appId: "1:427481930723:web:20ebe3ecfdd76cb5f0ded6"
 };
 
-// تهيئة التطبيق
+// تهيئة Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// عناصر النموذج
-const email = document.getElementById("email");
-const password = document.getElementById("password");
-const msg = document.getElementById("msg");
-const signUpBtn = document.getElementById("signUpBtn");
-const signInBtn = document.getElementById("signInBtn");
+// تحديد عناصر HTML
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const registerBtn = document.getElementById("registerBtn");
+const loginBtn = document.getElementById("loginBtn");
+const messageBox = document.getElementById("message");
 
-// إنشاء حساب جديد
-signUpBtn.addEventListener("click", () => {
-  createUserWithEmailAndPassword(auth, email.value, password.value)
-    .then((userCredential) => {
-      msg.textContent = "تم إنشاء الحساب بنجاح";
-    })
-    .catch((error) => {
-      msg.textContent = "خطأ في التسجيل: " + error.message;
-    });
-});
+// تسجيل حساب جديد
+registerBtn.addEventListener("click", () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
 
-// تسجيل دخول
-signInBtn.addEventListener("click", () => {
-  signInWithEmailAndPassword(auth, email.value, password.value)
-    .then((userCredential) => {
-      // تسجيل دخول ناجح → الانتقال إلى صفحة اللعبة
+  if (!email || !password) {
+    showMessage("يرجى إدخال البريد وكلمة المرور");
+    return;
+  }
+
+  createUserWithEmailAndPassword(auth, email, password)
+    .then(() => {
+      showMessage("تم إنشاء الحساب بنجاح. جاري تسجيل الدخول...");
+      // الانتقال إلى صفحة اللعبة
       window.location.href = "game.html";
     })
     .catch((error) => {
-      msg.textContent = "خطأ في تسجيل الدخول: " + error.message;
+      showMessage("فشل التسجيل: " + error.message);
     });
 });
+
+// تسجيل الدخول لحساب موجود
+loginBtn.addEventListener("click", () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
+  if (!email || !password) {
+    showMessage("يرجى إدخال البريد وكلمة المرور");
+    return;
+  }
+
+  signInWithEmailAndPassword(auth, email, password)
+    .then(() => {
+      showMessage("تم تسجيل الدخول. جاري التوجيه...");
+      window.location.href = "game.html";
+    })
+    .catch((error) => {
+      showMessage("فشل تسجيل الدخول: " + error.message);
+    });
+});
+
+// رسالة توضيحية
+function showMessage(msg) {
+  if (messageBox) {
+    messageBox.textContent = msg;
+    messageBox.style.color = "red";
+  } else {
+    alert(msg); // حل بديل لو ما عندك div للرسائل
+  }
+}
