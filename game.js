@@ -49,3 +49,60 @@ editBtn.addEventListener("click", () => {
     alert("الاسم يجب أن يكون على الأقل 3 أحرف.");
   }
 });
+
+const donateForm = document.getElementById("donateForm");
+const donateMessage = document.getElementById("donateMessage");
+const user = auth.currentUser;
+
+donateForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const recipientEmail = document.getElementById("recipientEmail").value.trim().toLowerCase();
+  const donateAmount = parseInt(document.getElementById("donateAmount").value);
+
+  if (!recipientEmail || isNaN(donateAmount) || donateAmount <= 0) {
+    donateMessage.textContent = "يرجى إدخال بيانات صحيحة.";
+    return;
+  }
+
+  try {
+    const snapshot = await getDocs(collection(db, "users"));
+    let recipientDoc = null;
+    let senderDoc = null;
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.email === recipientEmail) {
+        recipientDoc = { id: doc.id, ...data };
+      }
+      if (data.email === user.email) {
+        senderDoc = { id: doc.id, ...data };
+      }
+    });
+
+    if (!recipientDoc) {
+      donateMessage.textContent = "المستلم غير موجود.";
+      return;
+    }
+
+    if (!senderDoc || senderDoc.coins < donateAmount) {
+      donateMessage.textContent = "رصيدك غير كافٍ.";
+      return;
+    }
+
+    // خصم من المرسل
+    await updateDoc(doc(db, "users", senderDoc.id), {
+      coins: senderDoc.coins - donateAmount
+    });
+
+    // إضافة للمستلم
+    await updateDoc(doc(db, "users", recipientDoc.id), {
+      coins: (recipientDoc.coins || 0) + donateAmount
+    });
+
+    donateMessage.textContent = `تم التبرع بـ ${donateAmount} عملة إلى ${recipientEmail}`;
+  } catch (error) {
+    console.error(error);
+    donateMessage.textContent = "حدث خطأ أثناء التبرع.";
+  }
+});
