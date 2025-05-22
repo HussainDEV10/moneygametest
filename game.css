@@ -1,19 +1,25 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: 'Rubik', sans-serif;
-  background: #f1f1f1;
+  background: #f8f8f8;
+  color: #333;
 }
 
 header {
-  background: #ffa500;
+  background: linear-gradient(90deg, #ff9800, #ff5722);
   color: white;
   padding: 15px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
 }
 
-.user-info {
+.user-info, .right-info {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -22,16 +28,37 @@ header {
 .edit-icon {
   cursor: pointer;
   background: white;
-  color: #ffa500;
+  color: #ff5722;
   border-radius: 50%;
   padding: 4px;
 }
 
-#usernameDisplay {
+.coins {
+  display: flex;
+  align-items: center;
+  background: white;
+  color: #ff9800;
+  padding: 5px 10px;
+  border-radius: 20px;
   font-weight: bold;
+}
+
+.coins .material-icons {
+  margin-right: 4px;
 }
 
 main {
   padding: 20px;
   text-align: center;
 }
+
+@media (max-width: 600px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .right-info {
+    margin-top: 10px;
+  }
+    }
