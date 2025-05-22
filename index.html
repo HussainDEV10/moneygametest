@@ -1,23 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <title>لعبة المال - تسجيل الدخول</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تسجيل حساب</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h2>تسجيل الدخول / إنشاء حساب</h2>
-    <input type="email" id="email" placeholder="الإيميل"><br><br>
-    <input type="password" id="password" placeholder="كلمة المرور"><br><br>
-    <button onclick="register()">تسجيل جديد</button>
-    <button onclick="login()">دخول</button>
-    <p id="status"></p>
+    <h2>تسجيل حساب جديد</h2>
+    <input type="email" id="email" placeholder="البريد الإلكتروني" />
+    <input type="password" id="password" placeholder="كلمة المرور" />
+    <button onclick="register()">تسجيل</button>
+    <p id="msg"></p>
   </div>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
