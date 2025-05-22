@@ -1,15 +1,18 @@
+// استيراد Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth,
   onAuthStateChanged,
   updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
 import {
   getFirestore,
-  collection,
+  doc,
+  setDoc,
   getDocs,
-  updateDoc,
-  doc
+  collection,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // إعداد Firebase
@@ -31,32 +34,36 @@ const userEmailSpan = document.getElementById("userEmail");
 const usernameDisplay = document.getElementById("usernameDisplay");
 const editBtn = document.getElementById("editUsername");
 const coinAmount = document.getElementById("coinAmount");
-const donateForm = document.getElementById("donateForm");
-const donateMessage = document.getElementById("donateMessage");
 
-let currentUser = null;
-
-// تحقق من تسجيل الدخول
+// عند دخول المستخدم
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    currentUser = user;
     userEmailSpan.textContent = user.email;
     usernameDisplay.textContent = user.displayName || "@username";
 
-    // جلب عدد العملات الحقيقي من قاعدة البيانات
+    // إنشاء أو تحديث مستند المستخدم في Firestore
+    const userDocRef = doc(db, "users", user.uid);
+    await setDoc(userDocRef, {
+      email: user.email,
+      displayName: user.displayName || "@username",
+      coins: 100
+    }, { merge: true });
+
+    // جلب الرصيد الحقيقي من قاعدة البيانات
     const snapshot = await getDocs(collection(db, "users"));
-    snapshot.forEach((doc) => {
-      const data = doc.data();
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
       if (data.email === user.email) {
         coinAmount.textContent = data.coins || 0;
       }
     });
+
   } else {
     window.location.href = "index.html";
   }
 });
 
-// تعديل اسم المستخدم
+// تعديل الاسم
 editBtn.addEventListener("click", () => {
   const newName = prompt("أدخل اسم جديد (بدون @):");
   if (newName && newName.trim().length >= 3) {
@@ -75,16 +82,15 @@ editBtn.addEventListener("click", () => {
 });
 
 // التبرع
+const donateForm = document.getElementById("donateForm");
+const donateMessage = document.getElementById("donateMessage");
+
 donateForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  if (!currentUser) {
-    donateMessage.textContent = "يرجى تسجيل الدخول أولاً.";
-    return;
-  }
-
   const recipientEmail = document.getElementById("recipientEmail").value.trim().toLowerCase();
   const donateAmount = parseInt(document.getElementById("donateAmount").value);
+  const user = auth.currentUser;
 
   if (!recipientEmail || isNaN(donateAmount) || donateAmount <= 0) {
     donateMessage.textContent = "يرجى إدخال بيانات صحيحة.";
@@ -96,13 +102,13 @@ donateForm.addEventListener("submit", async (e) => {
     let recipientDoc = null;
     let senderDoc = null;
 
-    snapshot.forEach((doc) => {
-      const data = doc.data();
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
       if (data.email === recipientEmail) {
-        recipientDoc = { id: doc.id, ...data };
+        recipientDoc = { id: docSnap.id, ...data };
       }
-      if (data.email === currentUser.email) {
-        senderDoc = { id: doc.id, ...data };
+      if (data.email === user.email) {
+        senderDoc = { id: docSnap.id, ...data };
       }
     });
 
@@ -127,7 +133,6 @@ donateForm.addEventListener("submit", async (e) => {
     });
 
     donateMessage.textContent = `تم التبرع بـ ${donateAmount} عملة إلى ${recipientEmail}`;
-    coinAmount.textContent = senderDoc.coins - donateAmount;
   } catch (error) {
     console.error(error);
     donateMessage.textContent = "حدث خطأ أثناء التبرع.";
