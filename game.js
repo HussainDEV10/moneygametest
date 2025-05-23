@@ -2,7 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getAuth,
   onAuthStateChanged,
-  signOut
+  signOut,
+  setPersistence,
+  browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore,
@@ -27,6 +29,11 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// تأكد من أن الجلسة تبقى محفوظة حتى بعد إعادة تحميل الصفحة
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("خطأ في إعداد الجلسة:", error);
+});
+
 const userEmail = document.getElementById("userEmail");
 const usernameDisplay = document.getElementById("usernameDisplay");
 const editUsernameBtn = document.getElementById("editUsername");
@@ -34,7 +41,13 @@ const coinAmount = document.getElementById("coinAmount");
 const donateBtn = document.getElementById("donateBtn");
 
 onAuthStateChanged(auth, async (user) => {
-  if (user) {
+  if (!user) {
+    // المستخدم غير موجود، أعد التوجيه
+    window.location.href = "index.html";
+    return;
+  }
+
+  try {
     const uid = user.uid;
     userEmail.textContent = user.email;
 
@@ -84,21 +97,15 @@ onAuthStateChanged(auth, async (user) => {
         return;
       }
 
-      let recipientRef = null;
-      let recipientId = null;
-
-      // البحث عن الحساب الآخر
-      const usersSnap = await getDoc(doc(db, "users", uid));
-      const usersQuery = await getDoc(doc(db, "usernames", targetUsername));
-
-      if (usersQuery.exists()) {
-        recipientId = usersQuery.data().uid;
-        recipientRef = doc(db, "users", recipientId);
-      } else {
-        // حل مؤقت: تفحص كل المستخدمين (غير فعال جداً، يُفضل إنشاء collection 'usernames')
+      // البحث عن المستخدم بواسطة اسم المستخدم
+      const usernameDoc = await getDoc(doc(db, "usernames", targetUsername));
+      if (!usernameDoc.exists()) {
         alert("لم يتم العثور على الحساب.");
         return;
       }
+
+      const recipientId = usernameDoc.data().uid;
+      const recipientRef = doc(db, "users", recipientId);
 
       await updateDoc(userRef, { coins: increment(-amount) });
       await updateDoc(recipientRef, { coins: increment(amount) });
@@ -107,7 +114,8 @@ onAuthStateChanged(auth, async (user) => {
       location.reload();
     });
 
-  } else {
-    window.location.href = "index.html"; // العودة إلى تسجيل الدخول إن لم يكن المستخدم موجود
+  } catch (error) {
+    console.error("خطأ أثناء تحميل بيانات المستخدم:", error);
+    alert("حدث خطأ، يرجى إعادة المحاولة.");
   }
 });
