@@ -61,41 +61,40 @@ main {
   .right-info {
     margin-top: 10px;
   }
-    }
+}
 
 
-.donate-section {
+.donation {
   margin-top: 30px;
   background: white;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 8px #ccc;
   max-width: 400px;
-  margin-inline: auto;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-left: auto;
+  margin-right: auto;
 }
 
-#donateForm {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-#donateForm input, #donateForm button {
+.donation input {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
   padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
   border-radius: 8px;
 }
 
-#donateForm button {
-  background: linear-gradient(90deg, #ff9800, #ff5722);
+#donateBtn {
+  background: #4caf50;
   color: white;
-  font-weight: bold;
-  cursor: pointer;
   border: none;
+  padding: 10px;
+  width: 100%;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
 }
 
-#donateMessage {
-  margin-top: 10px;
-  font-weight: bold;
+#donateBtn:hover {
+  background: #43a047;
 }
