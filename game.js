@@ -43,7 +43,7 @@ const donateBtn = document.getElementById("donateBtn");
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     // المستخدم غير موجود، أعد التوجيه
-    window.location.href = "index.html";
+    window.location.href = "game.html";
     return;
   }
 
