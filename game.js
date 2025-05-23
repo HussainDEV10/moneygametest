@@ -1,146 +1,113 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getAuth,
-    onAuthStateChanged,
-    updateProfile
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import {
-    getFirestore,
-    doc,
-    setDoc,
-    getDoc,
-    updateDoc,
-    getDocs,
-    collection
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  increment
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // إعدادات Firebase
-  const firebaseConfig = {
-    apiKey: "AIzaSyAuQJpBMSijYcYZQ8rAsdnKX-75s5x7qts",
-    authDomain: "moneygame-2025.firebaseapp.com",
-    projectId: "moneygame-2025",
-    storageBucket: "moneygame-2025.appspot.com",
-    messagingSenderId: "427481930723",
-    appId: "1:427481930723:web:20ebe3ecfdd76cb5f0ded6"
-  };
+// إعدادات Firebase
+const firebaseConfig = {
+  apiKey: "API_KEY",
+  authDomain: "PROJECT_ID.firebaseapp.com",
+  projectId: "PROJECT_ID",
+  storageBucket: "PROJECT_ID.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  const userEmailSpan = document.getElementById("userEmail");
-  const usernameDisplay = document.getElementById("usernameDisplay");
-  const editBtn = document.getElementById("editUsername");
-  const coinAmount = document.getElementById("coinAmount");
-  const donateForm = document.getElementById("donateForm");
-  const donateMessage = document.getElementById("donateMessage");
+const userEmail = document.getElementById("userEmail");
+const usernameDisplay = document.getElementById("usernameDisplay");
+const editUsernameBtn = document.getElementById("editUsername");
+const coinAmount = document.getElementById("coinAmount");
+const donateBtn = document.getElementById("donateBtn");
 
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      userEmailSpan.textContent = user.email;
-      usernameDisplay.textContent = user.displayName || "@username";
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const uid = user.uid;
+    userEmail.textContent = user.email;
 
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
+    const userRef = doc(db, "users", uid);
+    const userSnap = await getDoc(userRef);
 
-      if (!userSnap.exists()) {
-        // إنشاء مستند جديد برصيد 100 عملة
-        await setDoc(userRef, {
-          email: user.email,
-          displayName: user.displayName || "@username",
-          coins: 100
-        });
-        coinAmount.textContent = 100;
-      } else {
-        const data = userSnap.data();
-        coinAmount.textContent = data.coins || 0;
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        email: user.email,
+        username: "@مستخدم",
+        coins: 100
+      });
+    }
+
+    const userData = (await getDoc(userRef)).data();
+    usernameDisplay.textContent = userData.username || "@مستخدم";
+    coinAmount.textContent = userData.coins || 0;
+
+    // تغيير الاسم عند الضغط
+    editUsernameBtn.addEventListener("click", async () => {
+      const newName = prompt("ادخل اسم المستخدم الجديد (بدون @):");
+      if (newName && newName.trim() !== "") {
+        const finalName = "@" + newName.trim();
+        await updateDoc(userRef, { username: finalName });
+        usernameDisplay.textContent = finalName;
+        alert("تم تحديث اسم المستخدم.");
       }
-    } else {
-      window.location.href = "index.html";
-    }
-  });
+    });
 
-  editBtn.addEventListener("click", async () => {
-    const newName = prompt("أدخل اسم جديد (بدون @):");
-    if (newName && newName.trim().length >= 3) {
-      const displayName = "@" + newName.trim();
-      try {
-        await updateProfile(auth.currentUser, { displayName });
-        usernameDisplay.textContent = displayName;
+    // التبرع بالعملات
+    donateBtn.addEventListener("click", async () => {
+      const targetUsername = document.getElementById("donateTo").value.trim();
+      const amount = parseInt(document.getElementById("donateAmount").value);
 
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userRef, { displayName });
-
-        alert("تم تحديث الاسم بنجاح!");
-      } catch (error) {
-        alert("فشل التحديث: " + error.message);
+      if (!targetUsername.startsWith("@") || isNaN(amount) || amount <= 0) {
+        alert("يرجى إدخال اسم صحيح ومبلغ صحيح.");
+        return;
       }
-    } else {
-      alert("الاسم يجب أن يكون على الأقل 3 أحرف.");
-    }
-  });
 
-  donateForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+      if (targetUsername === userData.username) {
+        alert("لا يمكنك التبرع لنفسك.");
+        return;
+      }
 
-    const user = auth.currentUser;
-    if (!user) {
-      donateMessage.textContent = "يجب تسجيل الدخول أولاً.";
-      return;
-    }
+      if (userData.coins < amount) {
+        alert("لا تملك رصيد كافٍ.");
+        return;
+      }
 
-    const recipientEmail = document.getElementById("recipientEmail").value.trim().toLowerCase();
-    const donateAmount = parseInt(document.getElementById("donateAmount").value);
-
-    if (!recipientEmail || isNaN(donateAmount) || donateAmount <= 0) {
-      donateMessage.textContent = "يرجى إدخال بيانات صحيحة.";
-      return;
-    }
-
-    try {
-      const snapshot = await getDocs(collection(db, "users"));
-      let recipientDoc = null;
-      let senderDoc = null;
-      let senderId = null;
+      let recipientRef = null;
       let recipientId = null;
 
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (data.email === recipientEmail) {
-          recipientDoc = data;
-          recipientId = docSnap.id;
-        }
-        if (data.email === user.email) {
-          senderDoc = data;
-          senderId = docSnap.id;
-        }
-      });
+      // البحث عن الحساب الآخر
+      const usersSnap = await getDoc(doc(db, "users", uid));
+      const usersQuery = await getDoc(doc(db, "usernames", targetUsername));
 
-      if (!recipientDoc) {
-        donateMessage.textContent = "المستلم غير موجود.";
+      if (usersQuery.exists()) {
+        recipientId = usersQuery.data().uid;
+        recipientRef = doc(db, "users", recipientId);
+      } else {
+        // حل مؤقت: تفحص كل المستخدمين (غير فعال جداً، يُفضل إنشاء collection 'usernames')
+        alert("لم يتم العثور على الحساب.");
         return;
       }
 
-      if (!senderDoc || senderDoc.coins < donateAmount) {
-        donateMessage.textContent = "رصيدك غير كافٍ.";
-        return;
-      }
+      await updateDoc(userRef, { coins: increment(-amount) });
+      await updateDoc(recipientRef, { coins: increment(amount) });
 
-      // تنفيذ التحديثات
-      await updateDoc(doc(db, "users", senderId), {
-        coins: senderDoc.coins - donateAmount
-      });
+      alert(`تم التبرع بـ ${amount} إلى ${targetUsername}`);
+      location.reload();
+    });
 
-      await updateDoc(doc(db, "users", recipientId), {
-        coins: (recipientDoc.coins || 0) + donateAmount
-      });
-
-      coinAmount.textContent = senderDoc.coins - donateAmount;
-      donateMessage.textContent = `تم التبرع بـ ${donateAmount} عملة إلى ${recipientEmail}`;
-    } catch (error) {
-      console.error(error);
-      donateMessage.textContent = "حدث خطأ أثناء التبرع.";
-    }
-  });
-</script>
+  } else {
+    window.location.href = "index.html"; // العودة إلى تسجيل الدخول إن لم يكن المستخدم موجود
+  }
+});
