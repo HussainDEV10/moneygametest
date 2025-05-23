@@ -40,12 +40,6 @@ const editUsernameBtn = document.getElementById("editUsername");
 const coinAmount = document.getElementById("coinAmount");
 const donateBtn = document.getElementById("donateBtn");
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    // المستخدم غير موجود، أعد التوجيه
-    window.location.href = "game.html";
-    return;
-  }
 
   try {
     const uid = user.uid;
