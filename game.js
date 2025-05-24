@@ -1,4 +1,4 @@
-// 1) استيراد Firebase SDKs إصدار 10
+// 1) استيراد Firebase SDK (الإصدار 10)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth,
@@ -17,7 +17,7 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// 2) إعدادات Firebase (استبدل بالقيم لديك)
+// 2) إعدادات Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAuQJpBMSijYcYZQ8rAsdnKX-75s5x7qts",
   authDomain: "moneygame-2025.firebaseapp.com",
@@ -27,12 +27,12 @@ const firebaseConfig = {
   appId: "1:427481930723:web:20ebe3ecfdd76cb5f0ded6"
 };
 
-// 3) التهيئة
+// 3) تهيئة Firebase
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-// 4) عناصر الواجهة
+// 4) عناصر HTML
 const userEmailSpan    = document.getElementById("userEmail");
 const usernameDisplay  = document.getElementById("usernameDisplay");
 const editBtn          = document.getElementById("editUsername");
@@ -43,99 +43,96 @@ const amountInput      = document.getElementById("amount");
 
 let currentUserUID = null;
 
-// 5) إنشاء أو التأكد من مستند المستخدم
+// 5) إنشاء مستند المستخدم إذا لم يكن موجودًا
 async function ensureUserDoc(user) {
   const userRef = doc(db, "users", user.uid);
   const snap    = await getDoc(userRef);
+
   if (!snap.exists()) {
-    await setDoc(userRef, {
-      email:       user.email,
+    const initialData = {
+      email: user.email,
       displayName: user.email.split("@")[0],
-      coins:       100
-    });
-    return { displayName: user.email.split("@")[0], coins: 100 };
+      coins: 100
+    };
+    await setDoc(userRef, initialData);
+    return initialData;
   }
+
   return snap.data();
 }
 
-// 6) تحديث الواجهة بناءً على بيانات Firestore
-function updateUI(userData) {
+// 6) تحديث عناصر الصفحة ببيانات المستخدم
+function updateUI(data) {
   userEmailSpan.textContent   = auth.currentUser.email;
-  usernameDisplay.textContent = "@" + userData.displayName;
-  coinAmount.textContent      = userData.coins;
+  usernameDisplay.textContent = "@" + data.displayName;
+  coinAmount.textContent      = data.coins;
 }
 
-// 7) مراقبة حالة المصادقة
+// 7) التحقق من تسجيل الدخول
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    window.location.href = "index.html";
-    return;
-  }
+  if (!user) return location.href = "index.html";
+
   currentUserUID = user.uid;
   try {
-    const userData = await ensureUserDoc(user);
-    updateUI(userData);
-  } catch (err) {
-    console.error("Error in ensureUserDoc:", err);
-    alert("حدث خطأ عند تحميل بياناتك.");
+    const data = await ensureUserDoc(user);
+    updateUI(data);
+  } catch (e) {
+    console.error("فشل تحميل البيانات:", e);
+    alert("حدث خطأ أثناء تحميل بيانات المستخدم.");
   }
 });
 
-// 8) تعديل اسم المستخدم
+// 8) تغيير اسم المستخدم
 editBtn.addEventListener("click", async () => {
-  const newName = prompt("أدخل اسم جديد (بدون @):");
-  if (!newName || newName.trim().length < 3) {
-    alert("الاسم يجب أن يتكون من 3 أحرف على الأقل.");
-    return;
+  const input = prompt("أدخل اسم جديد (بدون @):");
+
+  if (!input || input.trim().length < 3) {
+    return alert("الاسم يجب أن يتكون من 3 أحرف على الأقل.");
   }
-  const displayName = newName.trim();
-  const userRef     = doc(db, "users", currentUserUID);
+
+  const newName = input.trim();
+  const userRef = doc(db, "users", currentUserUID);
+
   try {
-    await updateDoc(userRef, { displayName });
-    usernameDisplay.textContent = "@" + displayName;
+    await updateDoc(userRef, { displayName: newName });
+    usernameDisplay.textContent = "@" + newName;
     alert("تم تحديث الاسم بنجاح!");
-  } catch (err) {
-    console.error("Error updating displayName:", err);
-    alert("فشل تحديث الاسم: " + err.message);
+  } catch (e) {
+    console.error("فشل تعديل الاسم:", e);
+    alert("حدث خطأ أثناء تعديل الاسم.");
   }
 });
 
-// 9) زر التبرع باستخدام runTransaction
+// 9) التبرع بالعملات
 donateBtn.addEventListener("click", async () => {
-  const targetEmail = targetEmailInput.value.trim().toLowerCase();
-  const amount      = parseInt(amountInput.value.trim(), 10);
+  const email  = targetEmailInput.value.trim().toLowerCase();
+  const amount = parseInt(amountInput.value.trim(), 10);
 
-  // التحقق من المدخلات
-  if (!targetEmail || isNaN(amount) || amount <= 0) {
-    alert("يرجى إدخال بريد المستلم ومبلغ صالحين.");
-    return;
+  if (!email || isNaN(amount) || amount <= 0) {
+    return alert("يرجى إدخال بريد صحيح ومبلغ أكبر من 0.");
   }
-  if (targetEmail === auth.currentUser.email.toLowerCase()) {
-    alert("لا يمكنك التبرع لنفسك.");
-    return;
+
+  if (email === auth.currentUser.email.toLowerCase()) {
+    return alert("لا يمكنك التبرع لنفسك.");
   }
 
   try {
-    // 1) ابحث عن UID المستلم عبر البريد
-    const q = query(
-      collection(db, "users"),
-      where("email", "==", targetEmail)
-    );
-    const querySnap = await getDocs(q);
-    if (querySnap.empty) {
-      alert("المستخدم المستلم غير موجود.");
-      return;
-    }
-    const recipientRef = querySnap.docs[0].ref;
+    const q = query(collection(db, "users"), where("email", "==", email));
+    const snapshot = await getDocs(q);
 
-    // 2) نفذ المعاملة
+    if (snapshot.empty) {
+      return alert("لم يتم العثور على المستخدم المستلم.");
+    }
+
+    const recipientRef = snapshot.docs[0].ref;
+    const senderRef = doc(db, "users", currentUserUID);
+
     await runTransaction(db, async (t) => {
-      const senderRef    = doc(db, "users", currentUserUID);
-      const senderSnap   = await t.get(senderRef);
-      const recipientSnap= await t.get(recipientRef);
+      const senderSnap = await t.get(senderRef);
+      const recipientSnap = await t.get(recipientRef);
 
       if (!senderSnap.exists() || !recipientSnap.exists()) {
-        throw new Error("بيانات المستخدم غير موجودة.");
+        throw new Error("تعذر العثور على بيانات المستخدمين.");
       }
 
       const senderCoins    = senderSnap.data().coins;
@@ -145,20 +142,21 @@ donateBtn.addEventListener("click", async () => {
         throw new Error("رصيدك غير كافٍ.");
       }
 
-      // تحديث الأرصدة
       t.update(senderRef,    { coins: senderCoins - amount });
       t.update(recipientRef, { coins: recipientCoins + amount });
     });
 
-    alert(`تم التبرع بنجاح: أرسلت ${amount} عملة إلى ${targetEmail}`);
-    // 3) تحديث الواجهة للمرسل
-    const newSenderData = (await getDoc(doc(db, "users", currentUserUID))).data();
-    updateUI(newSenderData);
-    targetEmailInput.value = "";
-    amountInput.value      = "";
+    alert(`تم التبرع بـ ${amount} عملة إلى ${email}.`);
 
-  } catch (err) {
-    console.error("Donation transaction error:", err);
-    alert(err.message || "حدث خطأ أثناء عملية التبرع.");
+    // تحديث البيانات بعد التبرع
+    const updatedData = (await getDoc(senderRef)).data();
+    updateUI(updatedData);
+
+    targetEmailInput.value = "";
+    amountInput.value = "";
+
+  } catch (e) {
+    console.error("خطأ في التبرع:", e);
+    alert(e.message || "حدث خطأ أثناء عملية التبرع.");
   }
 });
