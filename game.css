@@ -31,6 +31,13 @@ header {
   color: #ff5722;
   border-radius: 50%;
   padding: 4px;
+  font-size: 20px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.edit-icon:hover {
+  background-color: #ff5722;
+  color: white;
 }
 
 .coins {
@@ -52,6 +59,40 @@ main {
   text-align: center;
 }
 
+/* تعديل اسم القسم ليتناسب مع HTML */
+.donate-section {
+  margin: 20px auto;
+  max-width: 400px;
+  padding: 15px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  text-align: right; /* لأن الموقع عربي و rtl */
+}
+
+.donate-section input,
+.donate-section button {
+  margin: 8px 0;
+  padding: 10px;
+  width: 100%;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  direction: ltr; /* لجعل إدخال البريد والمبلغ من اليسار إلى اليمين */
+  text-align: left;
+}
+
+.donate-section button {
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.donate-section button:hover {
+  background-color: #388e3c;
+}
+
 @media (max-width: 600px) {
   header {
     flex-direction: column;
@@ -61,32 +102,4 @@ main {
   .right-info {
     margin-top: 10px;
   }
-}
-
-.donation {
-  margin: 20px;
-  padding: 15px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
-}
-
-.donation input, .donation button {
-  margin: 5px 0;
-  padding: 10px;
-  width: 100%;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.donation button {
-  background-color: #4CAF50;
-  color: white;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.donation button:hover {
-  background-color: #388e3c;
-}
+  }
