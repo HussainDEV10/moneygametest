@@ -1,149 +1,144 @@
-// استيراد Firebase SDKs
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  updateProfile
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import {
-  getDatabase,
-  ref,
-  set,
-  get,
-  update
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+// استيراد الوظائف من Firebase SDK (تأكد من إعداد Firebase مسبقاً في مشروعك)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-// إعداد Firebase
+// إعدادات Firebase الخاصة بك
 const firebaseConfig = {
-  apiKey: "AIzaSyAuQJpBMSijYcYZQ8rAsdnKX-75s5x7qts",
-  authDomain: "moneygame-2025.firebaseapp.com",
-  projectId: "moneygame-2025",
-  storageBucket: "moneygame-2025.appspot.com",
-  messagingSenderId: "427481930723",
-  appId: "1:427481930723:web:20ebe3ecfdd76cb5f0ded6",
-  databaseURL: "https://moneygame-2025-default-rtdb.firebaseio.com"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getDatabase(app);
+const db = getFirestore(app);
 
-// عناصر الواجهة
-const userEmailSpan    = document.getElementById("userEmail");
-const usernameDisplay  = document.getElementById("usernameDisplay");
-const editBtn          = document.getElementById("editUsername");
-const coinAmount       = document.getElementById("coinAmount");
-const donateBtn        = document.getElementById("donateBtn");
-const targetEmailInput = document.getElementById("targetEmail");
-const amountInput      = document.getElementById("amount");
+// دالة لإنشاء مستند مستخدم إذا لم يكن موجودًا
+async function createUserDocIfNotExists(user) {
+  const userDocRef = doc(db, "users", user.uid);
+  const userDocSnap = await getDoc(userDocRef);
 
-let currentUserUID = null;
+  if (!userDocSnap.exists()) {
+    await setDoc(userDocRef, {
+      email: user.email,
+      username: user.email.split('@')[0],  // يمكنك تعديلها لاحقًا
+      coins: 1000  // رصيد ابتدائي
+    });
+  }
+}
 
-// عند تغيير حالة المصادقة (تسجيل دخول/خروج)
+// تحديث عرض البيانات في الصفحة
+async function updateUI(user) {
+  const userDocRef = doc(db, "users", user.uid);
+  const userDocSnap = await getDoc(userDocRef);
+  if (userDocSnap.exists()) {
+    const data = userDocSnap.data();
+    document.getElementById("userEmail").textContent = data.email;
+    document.getElementById("usernameDisplay").textContent = "@" + data.username;
+    document.getElementById("coinAmount").textContent = data.coins;
+  }
+}
+
+// التعامل مع حالة تسجيل الدخول
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    // إذا لم يكن هناك مستخدم مسجل، أعيده للصفحة الرئيسية
-    window.location.href = "index.html";
-    return;
-  }
-
-  // تخزين UID
-  currentUserUID = user.uid;
-
-  // عرض البريد واسم المستخدم
-  userEmailSpan.textContent   = user.email;
-  usernameDisplay.textContent = user.displayName || "@username";
-
-  // المرجع لمستند المستخدم في Realtime Database
-  const userRef = ref(db, `users/${currentUserUID}`);
-  const snap    = await get(userRef);
-
-  if (!snap.exists()) {
-    // أول دخول للمستخدم: إنشاء بياناته مع 100 عملة
-    await set(userRef, {
-      email:       user.email,
-      displayName: user.displayName || "@username",
-      coins:       100
-    });
-    coinAmount.textContent = 100;
+  if (user) {
+    await createUserDocIfNotExists(user);
+    await updateUI(user);
   } else {
-    // تحميل الرصيد الحالي
-    coinAmount.textContent = snap.val().coins || 0;
+    // إذا لم يكن المستخدم مسجلاً، يمكن توجيهه لتسجيل الدخول
+    document.getElementById("userEmail").textContent = "يرجى تسجيل الدخول";
+    document.getElementById("usernameDisplay").textContent = "@guest";
+    document.getElementById("coinAmount").textContent = "0";
   }
-});
-
-// تعديل اسم المستخدم
-editBtn.addEventListener("click", () => {
-  const newName = prompt("أدخل اسم جديد (بدون @):");
-  if (!newName || newName.trim().length < 3) {
-    alert("الاسم يجب أن يتكون من 3 أحرف على الأقل.");
-    return;
-  }
-  const displayName = "@" + newName.trim();
-
-  updateProfile(auth.currentUser, { displayName })
-    .then(async () => {
-      // تحديث العرض في الصفحة
-      usernameDisplay.textContent = displayName;
-      // تحديث الاسم في قاعدة البيانات
-      await update(ref(db, `users/${currentUserUID}`), { displayName });
-      alert("تم تحديث الاسم بنجاح!");
-    })
-    .catch((err) => {
-      alert("خطأ أثناء التحديث: " + err.message);
-    });
 });
 
 // زر التبرع
-donateBtn.addEventListener("click", async () => {
-  const targetEmail = targetEmailInput.value.trim().toLowerCase();
-  const amount      = parseInt(amountInput.value.trim(), 10);
+document.getElementById("donateBtn").addEventListener("click", async () => {
+  const sender = auth.currentUser;
+  if (!sender) {
+    alert("يجب تسجيل الدخول أولاً!");
+    return;
+  }
 
-  // التحقق من صحة المدخلات
+  const targetEmail = document.getElementById("targetEmail").value.trim();
+  const amount = parseInt(document.getElementById("amount").value);
+
   if (!targetEmail || isNaN(amount) || amount <= 0) {
-    alert("يرجى إدخال بريد المستلم ومبلغ صالحين.");
+    alert("يرجى إدخال بريد المستلم والمبلغ بشكل صحيح.");
     return;
   }
 
-  // البحث عن UID المستلم عبر الإيميل
-  const allUsersSnap = await get(ref(db, "users/"));
-  let recipientUID = null;
-  allUsersSnap.forEach(childSnap => {
-    if (childSnap.val().email.toLowerCase() === targetEmail) {
-      recipientUID = childSnap.key;
+  if (targetEmail === sender.email) {
+    alert("لا يمكنك التبرع لنفسك.");
+    return;
+  }
+
+  // ابحث عن المستخدم المستلم في قاعدة البيانات
+  const usersCollectionRef = doc(db, "users");
+  try {
+    // بحث عن المستلم عبر البريد الإلكتروني (نحتاج لإجراء بحث عبر مجموعة المستخدمين)
+    // للأسف Firestore لا يدعم البحث المباشر بدون فهرس، لذا ننفذ بحث عبر جلب كل المستخدمين (غير مثالي في مشاريع كبيرة)
+    // البديل الأفضل: استخدام قاعدة بيانات تحتوي على إسناد البريد إلى uid أو استخدام Firebase Functions
+
+    // هنا طريقة مبسطة جداً (تنصح بتحسينها في المشروع الحقيقي)
+    const usersQuerySnapshot = await getDoc(doc(db, "users", sender.uid)); // هذا فقط المستند الخاص بالمرسل، نحتاج البحث عن المستلم
+
+    // هنا بدلاً من البحث المعقد، سأفترض أن البريد الخاص بالمستلم معروف بالفعل uid له أو أن لديك خريطة في قاعدة بيانات (لتحديث لاحق)
+
+    // لذلك سأعطيك دالة للبحث عن uid لمستخدم بواسطة البريد (طريقة غير مثالية):
+    const usersRef = await getDocs(collection(db, "users"));
+    let targetUid = null;
+    usersRef.forEach(docSnap => {
+      if (docSnap.data().email === targetEmail) {
+        targetUid = docSnap.id;
+      }
+    });
+
+    if (!targetUid) {
+      alert("لم يتم العثور على المستلم.");
+      return;
     }
-  });
 
-  if (!recipientUID) {
-    alert("المستخدم المستلم غير موجود.");
-    return;
+    // جلب بيانات المرسل والمستلم
+    const senderDocRef = doc(db, "users", sender.uid);
+    const senderDocSnap = await getDoc(senderDocRef);
+
+    const targetDocRef = doc(db, "users", targetUid);
+    const targetDocSnap = await getDoc(targetDocRef);
+
+    if (!senderDocSnap.exists() || !targetDocSnap.exists()) {
+      alert("حدث خطأ في البيانات.");
+      return;
+    }
+
+    const senderData = senderDocSnap.data();
+    const targetData = targetDocSnap.data();
+
+    if (senderData.coins < amount) {
+      alert("رصيدك غير كافٍ.");
+      return;
+    }
+
+    // تحديث الأرصدة بشكل آمن
+    await updateDoc(senderDocRef, {
+      coins: senderData.coins - amount
+    });
+
+    await updateDoc(targetDocRef, {
+      coins: targetData.coins + amount
+    });
+
+    alert(`تم التبرع بـ ${amount} عملات إلى ${targetData.username}`);
+
+    // تحديث الواجهة
+    await updateUI(sender);
+
+  } catch (error) {
+    console.error("خطأ في التبرع:", error);
+    alert("حدث خطأ أثناء عملية التبرع.");
   }
-
-  // مراجع المرسل والمستلم
-  const senderRef    = ref(db, `users/${currentUserUID}`);
-  const recipientRef = ref(db, `users/${recipientUID}`);
-
-  // جلب بياناتهما
-  const senderSnap    = await get(senderRef);
-  const recipientSnap = await get(recipientRef);
-
-  const senderCoins    = senderSnap.val().coins || 0;
-  const recipientCoins = recipientSnap.val().coins || 0;
-
-  // التحقق من كفاية الرصيد
-  if (senderCoins < amount) {
-    alert("رصيدك غير كافٍ.");
-    return;
-  }
-
-  // تحديث الأرصدة في القاعدة
-  await update(senderRef,    { coins: senderCoins - amount });
-  await update(recipientRef, { coins: recipientCoins + amount });
-
-  // تحديث الواجهة للمستخدم الحالي
-  coinAmount.textContent = senderCoins - amount;
-  alert(`تمت عملية التبرع بنجاح: أرسلت ${amount} عملة إلى ${targetEmail}`);
-  
-  // إفراغ الحقول
-  targetEmailInput.value = "";
-  amountInput.value      = "";
 });
